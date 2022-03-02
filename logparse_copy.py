@@ -3,7 +3,9 @@ import re
 import copy
 import numpy as np
 from typing import TypedDict, List, Dict
-import cclib as cc
+from estampes.parser import DataFile, build_qlabel
+from estampes.tools.atom import convert_labsymb
+from estampes.data.physics import PHYSFACT
 import calculate_rmsd as rmsd
 
 class IntCrd(TypedDict):
@@ -16,8 +18,6 @@ class ModCrd(TypedDict):
     L: List[IntCrd]
     D: List[IntCrd]
 
-PT = cc.parser.utils.PeriodicTable()
-
 #IntCrd = Dict(str, ModCrd)
 #StrVec = List[str]
 #IntVecVec = List[List[int]]
@@ -29,10 +29,30 @@ LRA_PARAM = { 'B2VTZ': {'CH': [-0.074795+1,  0.080798],
                         'CO': [-0.004834+1,  0.003455],
                         'CF': [-0.000953+1, -0.001231],
                         'CN': [ 0.006962+1, -0.010544],
-                        'CCl':[-0.108290+1,  0.174512]}
+                        'CCl':[-0.108290+1,  0.174512]},
+              'rDSDT': {'CH': [-0.00239+1, 0],
+                        'HO': [0.24674 +1, -0.24091],
+                        'CC': [-0.00184+1, 0],
+                        'HN': [-0.00216+1, 0],
+                        'CO': [-0.00297+1, 0],
+                        'CF': [-0.00307+1, 0 ],
+                        'CN': [-0.00234+1, 0],
+                        'CS': [-0.01222+1, 0.01672],
+                        'CCl': [-0.0043+1, 0]},
+              'PW6D3': {'CH': [-0.00586+1, 0],
+                        'HO': [0.17529 +1, -0.17005],
+                        'CC': [0.00014 +1, 0],
+                        'HN': [-0.00331+1, 0],
+                        'CO': [0.01708+1, -0.0212],
+                        'CF': [-0.00598+1, 0],
+                        'CN': [0.01705 +1, -0.02079],
+                        'CS': [-0.01296+1, 0.02188],
+                        'CCl': [-0.0014+1, 0]},
+
             }
 
-TPL_PARAM = { 'B2VTZ': {'NO': -0.00484515}}
+TPL_PARAM = { 'B2VTZ': {'NO': -0.00484515},
+              'rDSDT': {'SH': 0.00299}}
 
 class KeywordError(Exception):
     """Generates an error if keyword not found.
@@ -392,12 +412,20 @@ def read_molinfo(fname):
     Arguments:
         fname {[type]} -- [description]
     """
-    ccfile = cc.ccopen(fname)
-    data = ccfile.parse()
-    crd = data.atomcoords[-1]
-    atnum = data.atomnos
+    dkeys = {
+        #    'Energy': build_qlabel(1),
+            'atcrd': build_qlabel('atcrd', 'last'),
+            'atnum': build_qlabel('atnum'),
+            }
+    dfile = DataFile(fname)
+    data = dfile.get_data(*dkeys.values())
+    atnum = np.array(data[dkeys['atnum']]['data'])
+    #atlab = convert_labsymb(True, *data[dkeys['atnum']]['data'])
+    #print(atlab)
+    atcrd = np.array(data[dkeys['atcrd']]['data'])*PHYSFACT.bohr2ang
+
     intcrd = SetIntCoord(getredcoord(fname))
-    return MolCoord(atnum, crd, intcrd)
+    return MolCoord(atnum, atcrd, intcrd)
 
 class MolCoord():
     """Class to contain the redundant interna coordinates of a molecule
@@ -415,6 +443,7 @@ class MolCoord():
             fragments {list} -- [description] (default: {[[]]})
         """
         self.atoms = atoms
+        self.atlabs = convert_labsymb(True, *atoms.tolist())
         self.atmcrd = atmcrd
         self.intcrd = intcrd
         self._updateintcrdtype()
@@ -595,7 +624,7 @@ class MolCoord():
             if key == 'R':
                 for _intcrd in self.intcrd.vals[key]:
                     _tps = ''
-                    _tmp = [PT.element[self.atoms[x]] for x in _intcrd.indx]
+                    _tmp = [self.atlabs[x] for x in _intcrd.indx]
                     _tmp.sort()
                     _tps = _tps.join(_tmp)
                     _intcrd.tps = _tps
@@ -629,8 +658,8 @@ class MolCoord():
             return None
         crd_tmp_gss = copy.deepcopy(self.atmcrd) - rmsd.centroid(self.atmcrd)
         crd_tmp_ref = copy.deepcopy(other.atmcrd) - rmsd.centroid(other.atmcrd)
-        atm_tmp_ref = np.array([PT.element[x] for x in other.atoms])
-        atm_tmp_gss = np.array([PT.element[x] for x in self.atoms])
+        atm_tmp_ref = np.array(other.atlabs)
+        atm_tmp_gss = np.array(self.atlabs)
         result_rmsd, q_swap, q_reflection, q_review = rmsd.check_reflections(atm_tmp_ref, atm_tmp_gss,
                                                                              crd_tmp_ref, crd_tmp_gss,
                                                                              reorder_method=rmsd.reorder_hungarian,
