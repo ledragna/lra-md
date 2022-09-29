@@ -37,6 +37,8 @@ def read_geom(fname):
 
 
 fname = sys.argv[1]
+# level: B2VTZ, rDSDT, PW6D3
+level = sys.argv[2]
 
 datam = lp.read_molinfo(fname)
 mol = read_geom(fname)
@@ -48,10 +50,8 @@ for j, lb in enumerate(mol[0]):
     geom += tmpl_line.format(a=mol[1][j],b=lb)
 
 
-#cf12geom = cc.ccopen("creatinine_3_df_ccf12.xyz").parse()
-#cf12mc = lp.MolCoord(ccf12geom.atomnos, ccf12geom.atomcoords[0], None)
-datam.lrafragred(0, 'R', 'B2VTZ')
-datam.tplfragred(0, 'R', 'B2VTZ')
+datam.lrafragred(0, 'R', level)
+#datam.tplfragred(0, 'R', 'B2VTZ')
 gic = lp.printmod_gic(datam)
 
 fout = fname[:-4]+"_mod.com"
