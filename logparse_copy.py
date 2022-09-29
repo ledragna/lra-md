@@ -457,13 +457,14 @@ class MolCoord():
     @property
     def atoms(self):
         """
-        Return the name of the molecular system
+        TODO 
         """
         return self.__atoms
 
     @atoms.setter
     def atoms(self, val):
-        """Sets the name of the molecular system
+        """
+        TODO 
 
         Arguments:
             val {str} -- Atom labels list
@@ -473,13 +474,15 @@ class MolCoord():
     @property
     def atmcrd(self):
         """
-        Return the name of the molecular system
+        TODO 
+        
         """
         return self.__atmcrd
 
     @atmcrd.setter
     def atmcrd(self, val):
         """Sets the name of the molecular system
+        TODO 
 
         Arguments:
             val {str} -- Atom labels list
@@ -491,6 +494,7 @@ class MolCoord():
     @property
     def intcrd(self):
         """
+        TODO 
         Return the name of the molecular system
         """
         return self.__intcrd
@@ -498,6 +502,7 @@ class MolCoord():
     @intcrd.setter
     def intcrd(self, val):
         """Sets the name of the molecular system
+        TODO 
 
         Arguments:
             val {str} -- Atom labels list
@@ -508,6 +513,7 @@ class MolCoord():
     @property
     def fragments(self):
         """
+        TODO 
         Return the name of the molecular system
         """
         return self.__fragments
@@ -582,14 +588,15 @@ class MolCoord():
 
     def modfragred(self, fragid, redmod):
         """
-        add a delta to all the defined gic
+        TODO 
+        
         """
         indmap = dict(enumerate(self.__fragments[fragid]))
         self.modintcrd = self.modintcrd.addmap(redmod, indmap)
 
     def replacefragred(self, fragid, redmod):
         """
-        add a delta to all the defined gic
+        TODO
         """
         indmap = dict(enumerate(self.__fragments[fragid]))
         self.modintcrd = self.modintcrd.replacemap(redmod, indmap)
